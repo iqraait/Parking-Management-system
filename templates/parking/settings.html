@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - ParkOS{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        <h2 class="mb-0 fw-bold">Enterprise Settings</h2>
+        <p class="text-muted"><i class="fa-solid fa-gears me-2"></i> Manage employee roles and system configurations</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-5 mb-4">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-4">Create Employee Account</h5>
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" action="{% url 'settings' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_user">
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Username <span class="text-danger">*</span></label>
+                    <input type="text" name="username" class="apple-input form-control" placeholder="e.g. jdoe_staff" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Email Address</label>
+                    <input type="email" name="email" class="apple-input form-control">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Mobile Number</label>
+                    <input type="text" name="mobile" class="apple-input form-control">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold">Job Title / Tag <span class="text-danger">*</span></label>
+                    <select name="role" class="apple-input form-select" required>
+                        <option value="Staff">Staff</option>
+                        <option value="Administrator">Administrator</option>
+                        <option value="Super Admin">System Super Admin</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted fw-semibold mb-2">Module Privileges</label>
+                    <div class="border rounded px-3 py-2 bg-light mb-2">
+                        <div class="form-check form-switch mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_dashboard" value="true" id="p_dashboard" checked>
+                          <label class="form-check-label" for="p_dashboard">Dashboard (View Live Stats)</label>
+                        </div>
+                    </div>
+                    <div class="border rounded px-3 py-2 bg-light mb-2">
+                        <div class="form-check form-switch mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_manage_entry" value="true" id="p_entry" checked>
+                          <label class="form-check-label fw-bold" for="p_entry">Entry Console</label>
+                        </div>
+                        <div class="form-check form-switch ms-3 mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_edit_entry" value="true" id="p_edit_entry">
+                          <label class="form-check-label text-muted small" for="p_edit_entry">Allow Editing Entered Vehicles</label>
+                        </div>
+                    </div>
+                    <div class="border rounded px-3 py-2 bg-light mb-2">
+                        <div class="form-check form-switch mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_manage_exit" value="true" id="p_exit" checked>
+                          <label class="form-check-label fw-bold" for="p_exit">Exit Console</label>
+                        </div>
+                        <div class="form-check form-switch ms-3 mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_collect_cash" value="true" id="p_collect" checked>
+                          <label class="form-check-label text-muted small" for="p_collect">Process & Collect Payments</label>
+                        </div>
+                        <div class="form-check form-switch ms-3 mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_edit_exit" value="true" id="p_edit_exit">
+                          <label class="form-check-label text-muted small" for="p_edit_exit">Allow Editing Exit Table Data</label>
+                        </div>
+                    </div>
+                    <div class="border rounded px-3 py-2 bg-light mb-2">
+                        <div class="form-check form-switch mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_manage_zones" value="true" id="p_zone">
+                          <label class="form-check-label fw-bold" for="p_zone">Zone Management</label>
+                        </div>
+                        <div class="form-check form-switch ms-3 mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_edit_zones" value="true" id="p_edit_zone">
+                          <label class="form-check-label text-muted small" for="p_edit_zone">Allow Editing Zones Options</label>
+                        </div>
+                    </div>
+                    <div class="border rounded px-3 py-2 bg-light mb-2">
+                        <div class="form-check form-switch mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_view_reports" value="true" id="p_report">
+                          <label class="form-check-label fw-bold" for="p_report">AI Reports Module</label>
+                        </div>
+                        <div class="form-check form-switch ms-3 mb-1">
+                          <input class="form-check-input" type="checkbox" name="priv_download_reports" value="true" id="p_dl_report">
+                          <label class="form-check-label text-muted small" for="p_dl_report">Allow Triggering PDF Downloads</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label text-muted fw-semibold">Generate Password <span class="text-danger">*</span></label>
+                    <input type="password" name="password" class="apple-input form-control" placeholder="Secure Password" required>
+                </div>
+                
+                <button type="submit" class="apple-btn btn-primary w-100">
+                    <i class="fa-solid fa-user-plus me-2"></i> Add Employee
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-lg-7 mb-4">
+        <div class="glass-card p-4">
+            <h5 class="fw-bold mb-4">Employee Directory</h5>
+            <div class="table-responsive">
+                <table class="apple-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role / Privilege</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td class="fw-bold">@{{ u.username }}</td>
+                            <td>
+                                {% if u.role == 'Super Admin' %}
+                                    <span class="badge bg-danger rounded-pill px-3 py-2"><i class="fa-solid fa-crown"></i> Super Admin</span>
+                                {% elif u.role == 'Administrator' %}
+                                    <span class="badge bg-primary rounded-pill px-3 py-2">Administrator</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill px-3 py-2">Staff</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}<i class="fa-solid fa-circle text-success" style="font-size:10px;"></i> Active{% else %}<i class="fa-solid fa-circle text-danger" style="font-size:10px;"></i> Suspended{% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 ms-2" data-bs-toggle="modal" data-bs-target="#editUserModal{{ u.id }}">
+                                    <i class="fa-solid fa-user-pen"></i>
+                                </button>
+                            </td>
+                            <td>{{ u.date_joined|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+{% for u in users %}
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-card rounded-4 border-0 shadow-lg" style="background: rgba(255,255,255,0.95);">
+      <div class="modal-header border-bottom-0">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-pen text-primary me-2"></i>Edit Employee: {{ u.username }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body py-4">
+        <form action="{% url 'settings' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_user">
+            <input type="hidden" name="user_id" value="{{ u.id }}">
+            
+            <div class="mb-3">
+                <label class="form-label text-muted fw-semibold">Mobile Number</label>
+                <input type="text" name="mobile" class="apple-input form-control" value="{{ u.mobile|default:'' }}">
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label text-muted fw-semibold mb-2">Modify Privileges</label>
+                <div class="border rounded px-3 py-2 bg-light mb-2">
+                    <div class="form-check form-switch mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_dashboard" value="true" id="ep_dashboard{{ u.id }}" {% if u.can_view_dashboard %}checked{% endif %}>
+                      <label class="form-check-label" for="ep_dashboard{{ u.id }}">Dashboard (View Live Stats)</label>
+                    </div>
+                </div>
+                <div class="border rounded px-3 py-2 bg-light mb-2">
+                    <div class="form-check form-switch mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_manage_entry" value="true" id="ep_entry{{ u.id }}" {% if u.can_manage_entry %}checked{% endif %}>
+                      <label class="form-check-label fw-bold" for="ep_entry{{ u.id }}">Entry Console</label>
+                    </div>
+                    <div class="form-check form-switch ms-3 mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_edit_entry" value="true" id="ep_edit_entry{{ u.id }}" {% if u.can_edit_entry %}checked{% endif %}>
+                      <label class="form-check-label text-muted small" for="ep_edit_entry{{ u.id }}">Allow Editing Entered Vehicles</label>
+                    </div>
+                </div>
+                <div class="border rounded px-3 py-2 bg-light mb-2">
+                    <div class="form-check form-switch mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_manage_exit" value="true" id="ep_exit{{ u.id }}" {% if u.can_manage_exit %}checked{% endif %}>
+                      <label class="form-check-label fw-bold" for="ep_exit{{ u.id }}">Exit Console</label>
+                    </div>
+                    <div class="form-check form-switch ms-3 mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_collect_cash" value="true" id="ep_collect{{ u.id }}" {% if u.can_collect_cash %}checked{% endif %}>
+                      <label class="form-check-label text-muted small" for="ep_collect{{ u.id }}">Process & Collect Payments</label>
+                    </div>
+                    <div class="form-check form-switch ms-3 mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_edit_exit" value="true" id="ep_edit_exit{{ u.id }}" {% if u.can_edit_exit %}checked{% endif %}>
+                      <label class="form-check-label text-muted small" for="ep_edit_exit{{ u.id }}">Allow Editing Exit Table Data</label>
+                    </div>
+                </div>
+                <div class="border rounded px-3 py-2 bg-light mb-2">
+                    <div class="form-check form-switch mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_manage_zones" value="true" id="ep_zone{{ u.id }}" {% if u.can_manage_zones %}checked{% endif %}>
+                      <label class="form-check-label fw-bold" for="ep_zone{{ u.id }}">Zone Management</label>
+                    </div>
+                    <div class="form-check form-switch ms-3 mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_edit_zones" value="true" id="ep_edit_zone{{ u.id }}" {% if u.can_edit_zones %}checked{% endif %}>
+                      <label class="form-check-label text-muted small" for="ep_edit_zone{{ u.id }}">Allow Editing Zones Options</label>
+                    </div>
+                </div>
+                <div class="border rounded px-3 py-2 bg-light mb-2">
+                    <div class="form-check form-switch mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_view_reports" value="true" id="ep_report{{ u.id }}" {% if u.can_view_reports %}checked{% endif %}>
+                      <label class="form-check-label fw-bold" for="ep_report{{ u.id }}">AI Reports Module</label>
+                    </div>
+                    <div class="form-check form-switch ms-3 mb-1">
+                      <input class="form-check-input" type="checkbox" name="priv_download_reports" value="true" id="ep_dl_report{{ u.id }}" {% if u.can_download_reports %}checked{% endif %}>
+                      <label class="form-check-label text-muted small" for="ep_dl_report{{ u.id }}">Allow Triggering PDF Downloads</label>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="apple-btn btn-primary w-100">
+                Update Employee
+            </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

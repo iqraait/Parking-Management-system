@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Exit - ParkOS{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        <h2 class="mb-0 fw-bold">Vehicle Checkout & Gate</h2>
+        <p class="text-muted"><i class="fa-solid fa-person-walking-arrow-right me-2"></i> Process exits and generate final billing</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto mb-4">
+        <div class="glass-card p-5">
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Search / Scan block -->
+            <form method="get" action="{% url 'exit' %}" class="d-flex mb-5">
+                <input type="text" name="q" value="{{ query }}" class="form-control form-control-lg apple-input rounded-end-0 border-end-0" placeholder="Scan or enter Ticket Number / License Plate" style="font-size: 1.2rem; background: rgba(255,255,255,0.9);">
+                <button type="submit" class="btn btn-lg border border-start-0 rounded-start-0 px-4" style="background: rgba(255,255,255,0.9); color: var(--apple-dark);">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+            
+            <div class="row g-4 align-items-center {% if not record %}opacity-50{% endif %}" {% if not record %}style="pointer-events: none;"{% endif %}>
+                <div class="col-md-6 border-end">
+                    <h5 class="fw-bold mb-3 text-muted">Ticket Details</h5>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Ticket No:</span>
+                        <span class="fw-bold">{% if record %}#{{ record.ticket_number }}{% else %}---{% endif %}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Vehicle:</span>
+                        <span class="fw-bold">{% if record %}{{ record.vehicle_number }} ({{ record.vehicle_type }}){% else %}---{% endif %}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Zone:</span>
+                        <span class="badge bg-light text-dark border">{% if record %}{{ record.zone.name }}{% else %}---{% endif %}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <span class="text-muted">Entry Time:</span>
+                        <span class="fw-bold">{% if record %}{{ record.entry_time|date:"h:i A (M d)" }}{% else %}---{% endif %}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Current Time:</span>
+                        <span class="fw-bold">{% if record %}{% now "h:i A (M d)" %}{% else %}---{% endif %}</span>
+                    </div>
+                </div>
+
+                <div class="col-md-6 ps-md-4">
+                    <div class="text-center p-4 rounded-4" style="background: rgba(0,0,0,0.03);">
+                        <p class="text-muted mb-1 text-uppercase fw-bold text-sm">Total Duration</p>
+                        <h3 class="fw-bold mb-3">{% if record %}{{ record.duration_hours }} hr{% else %}--:--{% endif %}</h3>
+                        
+                        <p class="text-muted mb-1 text-uppercase fw-bold text-sm">Amount Due</p>
+                        <h1 class="text-success fw-bold mb-4">₹ {% if record %}{{ record.total_charges }}{% else %}0.00{% endif %}</h1>
+                        
+                        {% if record %}
+                        <form method="post" action="{% url 'exit' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="ticket_number" value="{{ record.ticket_number }}">
+                            <button type="submit" class="apple-btn btn-primary w-100 mb-2">
+                                <i class="fa-solid fa-credit-card me-2"></i> Process Payment & Exit
+                            </button>
+                        </form>
+                        {% else %}
+                        <button class="apple-btn btn-primary w-100 mb-2" disabled>
+                            <i class="fa-solid fa-credit-card me-2"></i> Process Payment & Exit
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-4 mt-2 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold mb-0">Recent Exits</h5>
+        <form method="get" class="d-flex align-items-center">
+            <input type="date" name="date" class="form-control form-control-sm me-2 apple-input" style="width:auto;" value="{{ current_date }}">
+            <button type="submit" class="btn btn-sm btn-dark rounded-pill px-3">Filter</button>
+            {% if request.GET.date %}
+            <a href="?" class="btn btn-sm btn-outline-danger rounded-pill px-3 ms-2">Today</a>
+            {% endif %}
+        </form>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="apple-table data-table">
+            <thead>
+                <tr>
+                    <th>Ticket No</th>
+                    <th>Vehicle No</th>
+                    <th>Zone</th>
+                    <th>Duration</th>
+                    <th>Amount Paid</th>
+                    <th>Exit Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exit in recent_exits %}
+                <tr>
+                    <td class="fw-semibold">#{{ exit.ticket_number }}</td>
+                    <td>{{ exit.vehicle_number }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ exit.zone.name }}</span></td>
+                    <td>{{ exit.duration_hours }} hr</td>
+                    <td class="text-success fw-bold">₹{{ exit.total_charges }}</td>
+                    <td>{{ exit.exit_time|date:"h:i A" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted">No vehicles have exited recently.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Directory Logs - ParkOS{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        <h2 class="mb-0 fw-bold">Vehicle Master Directory</h2>
+        <p class="text-muted"><i class="fa-solid fa-book-journal-whills me-2"></i> Comprehensive audit log of all parking activity</p>
+    </div>
+</div>
+
+<div class="glass-card p-4 mt-2 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold mb-0">System Wide Logs</h5>
+        <form method="get" class="d-flex align-items-center">
+            <input type="date" name="date" class="form-control form-control-sm me-2 apple-input" style="width:auto;" value="{{ current_date|default:'' }}">
+            <button type="submit" class="btn btn-sm btn-dark rounded-pill px-3">Filter Date</button>
+            {% if request.GET.date %}
+            <a href="?" class="btn btn-sm btn-outline-danger rounded-pill px-3 ms-2">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="apple-table data-table">
+            <thead>
+                <tr>
+                    <th>Ticket No</th>
+                    <th>Vehicle Plate</th>
+                    <th>Zone</th>
+                    <th>Status</th>
+                    <th>Entry Date</th>
+                    <th>History</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vehicles %}
+                <tr>
+                    <td class="fw-semibold">#{{ v.ticket_number }}</td>
+                    <td class="fw-bold">{{ v.vehicle_number }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ v.zone.name }}</span></td>
+                    <td>
+                        {% if v.status == 'ACTIVE' %}
+                            <span class="badge bg-success">Active In-Premise</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Exited</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ v.entry_time|date:"Y-m-d h:i A" }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#historyModal{{ v.ticket_number }}">
+                            <i class="fa-solid fa-clock-rotate-left me-1"></i> Data
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted">No vehicle records found for this criteria.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block modals %}
+{% for v in vehicles %}
+<!-- Vehicle History Modal -->
+<div class="modal fade" id="historyModal{{ v.ticket_number }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content glass-card rounded-4 border-0 shadow-lg" style="background: rgba(255,255,255,0.98);">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-car-side text-primary me-2"></i> Vehicle Profile</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body py-4">
+          <div class="row">
+              <div class="col-md-6 mb-3">
+                  <div class="bg-light p-3 rounded-3" style="border: 1px solid #ddd; height: 100%;">
+                      <h6 class="fw-bold fs-6 mb-3 text-secondary">Identification</h6>
+                      <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Ticket ID:</span>
+                          <span class="fw-bold">#{{ v.ticket_number }}</span>
+                      </div>
+                      <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">License Plate:</span>
+                          <span class="fw-bold fs-5 shadow-sm px-2 text-dark" style="border:1px solid #ccc; background:#fff; border-radius:4px;">{{ v.vehicle_number }}</span>
+                      </div>
+                      <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Type:</span>
+                          <span class="fw-bold">{{ v.vehicle_type }}</span>
+                      </div>
+                      <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Assigned Zone:</span>
+                          <span class="fw-bold">{{ v.zone.name }}</span>
+                      </div>
+                  </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                  <div class="bg-light p-3 rounded-3" style="border: 1px solid #ddd; height: 100%;">
+                      <h6 class="fw-bold fs-6 mb-3 text-secondary">Timestamps</h6>
+                      <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Entry Timestamp:</span>
+                          <span class="fw-bold">{{ v.entry_time|date:"Y-m-d h:i A" }}</span>
+                      </div>
+                      <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Exit Timestamp:</span>
+                          <span class="fw-bold">{% if v.exit_time %}{{ v.exit_time|date:"Y-m-d h:i A" }}{% else %}--{% endif %}</span>
+                      </div>
+                      <div class="d-flex justify-content-between mb-2">
+                          <span class="text-muted">Total Time Logged:</span>
+                          <span class="fw-bold">{% if v.duration_hours %}{{ v.duration_hours }} hr(s){% else %}Parked Currently{% endif %}</span>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="bg-light p-3 rounded-3 mt-2" style="border: 1px solid #ddd;">
+              <h6 class="fw-bold fs-6 mb-3 text-secondary">Personnel Audit</h6>
+              <div class="row">
+                  <div class="col-6">
+                      <span class="text-muted d-block small">Entry Attendant Checkout</span>
+                      <span class="fw-bold"><i class="fa-solid fa-user-check text-primary me-2"></i>{{ v.entry_staff.username|default:"System" }}</span>
+                  </div>
+                  <div class="col-6">
+                      <span class="text-muted d-block small">Exit / Cash Collector ID</span>
+                      <span class="fw-bold"><i class="fa-solid fa-cash-register text-success me-2"></i>{{ v.exit_staff.username|default:"No Collection Yet" }}</span>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="mt-4 text-center">
+              <span class="text-muted d-block">Final Revenue Collected</span>
+              <h2 class="fw-bold text-success display-6 mb-0">{% if v.total_charges %}₹{{ v.total_charges }}{% else %}₹{{ v.calculate_current_charges }}{% endif %}</h2>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

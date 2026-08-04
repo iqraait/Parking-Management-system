@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Login - ParkOS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="glass-card p-5" style="max-width: 400px; width: 100%;">
+        <div class="text-center mb-4">
+            <i class="fa-solid fa-square-parking text-primary fa-3x mb-3" style="color: var(--apple-dark) !important;"></i>
+            <h3 class="fw-bold">Sign In to ParkOS</h3>
+            <p class="text-muted small">Enterprise Access Portal</p>
+        </div>
+
+        {% if form.errors %}
+        <div class="alert alert-danger shadow-sm rounded-3 py-2 text-center" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> Invalid credentials.
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold text-muted">Username</label>
+                <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" class="apple-input form-control" required placeholder="Enter username">
+            </div>
+            
+            <div class="mb-4">
+                <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold text-muted">Password</label>
+                <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}" class="apple-input form-control" required placeholder="Enter password">
+            </div>
+
+            <button type="submit" class="apple-btn w-100" style="background: var(--apple-dark); color: white;">
+                Sign In
+            </button>
+            <input type="hidden" name="next" value="{{ next|default:'/' }}" />
+        </form>
+
+        <div class="text-center mt-4">
+            <p class="text-muted small mb-0 mt-3"><i class="fa-solid fa-lock me-1"></i> Secure JWT Encrypted AES-256 Session</p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Hide the Apple dock on the login screen */
+.bubble-nav-container {
+    display: none !important;
+}
+</style>
+{% endblock %}

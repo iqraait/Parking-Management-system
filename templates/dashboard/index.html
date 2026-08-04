@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - ParkOS{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <h2 class="mb-0 fw-bold">Business Overview</h2>
+        <p class="text-muted"><i class="fa-regular fa-calendar me-2"></i> Today vs Yesterday Performance</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="apple-btn btn-primary" hx-get="/api/reports/export" hx-target="#export-status">
+            <i class="fa-solid fa-download me-2"></i> Export Report
+        </button>
+        <span id="export-status" class="ms-2"></span>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="glass-card p-4 h-100 position-relative">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="text-muted fw-semibold">Daily Revenue</div>
+                <div class="p-2 rounded-circle bg-light text-success">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="kpi-value">₹{{ revenue_today|floatformat:2 }}</div>
+            <div class="mt-2 text-sm">
+                <span class="text-success fw-bold"><i class="fa-solid fa-arrow-trend-up"></i> Live</span> today
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="text-muted fw-semibold">Active Vehicles</div>
+                <div class="p-2 rounded-circle bg-light text-primary">
+                    <i class="fa-solid fa-car"></i>
+                </div>
+            </div>
+            <div class="kpi-value">{{ active_vehicles }}</div>
+            <div class="mt-2 text-sm">
+                <span class="text-info fw-bold">{{ available_slots }} slots available</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="text-muted fw-semibold">Entries Today</div>
+                <div class="p-2 rounded-circle bg-light text-warning">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                </div>
+            </div>
+            <div class="kpi-value">{{ total_entry }}</div>
+            <div class="mt-2 text-sm">Tracking <span class="fw-bold">All Zones</span></div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="glass-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="text-muted fw-semibold">Average Duration</div>
+                <div class="p-2 rounded-circle bg-light text-secondary">
+                    <i class="fa-regular fa-clock"></i>
+                </div>
+            </div>
+            <div class="kpi-value">{{ avg_duration }} hr</div>
+            <div class="mt-2 text-sm text-success">Global metric</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mb-5">
+    <div class="col-12 col-lg-8">
+        <div class="glass-card p-4 h-100">
+            <h5 class="fw-bold mb-4">Revenue & Traffic Trend</h5>
+            <canvas id="mainChart" height="100"></canvas>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <h5 class="fw-bold mb-4">AI Insight Recommendations</h5>
+            
+            <div class="d-flex mb-3 align-items-start">
+                <div class="text-warning me-3 fs-3"><i class="fa-solid fa-lightbulb"></i></div>
+                <div>
+                    <h6 class="fw-bold mb-1">Increase Zone A Capacity</h6>
+                    <p class="text-muted small mb-0">Zone A has reached 90% occupancy for 4 consecutive hours. Consider redirecting traffic to Zone C.</p>
+                </div>
+            </div>
+            
+            <div class="d-flex mb-3 align-items-start">
+                <div class="text-primary me-3 fs-3"><i class="fa-solid fa-users-gear"></i></div>
+                <div>
+                    <h6 class="fw-bold mb-1">Deploy More Staff</h6>
+                    <p class="text-muted small mb-0">Predicted peak traffic incoming at 5:00 PM. 2 additional staff members recommended at exits.</p>
+                </div>
+            </div>
+            
+            <div class="d-flex align-items-start">
+                <div class="text-success me-3 fs-3"><i class="fa-solid fa-wallet"></i></div>
+                <div>
+                    <h6 class="fw-bold mb-1">Digital Payments UP</h6>
+                    <p class="text-muted small mb-0">UPI transactions increased by 22% this week. Ensure QR codes are visible.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity Table -->
+<div class="glass-card p-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold mb-0">Live Parking Feed</h5>
+        <div class="input-group" style="width: 250px;">
+            <span class="input-group-text bg-transparent border-end-0" id="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="text" class="form-control border-start-0 ps-0" placeholder="Search vehicle..." aria-label="Search" aria-describedby="search-icon">
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="apple-table">
+            <thead>
+                <tr>
+                    <th>Ticket No</th>
+                    <th>Vehicle No</th>
+                    <th>Zone</th>
+                    <th>Entry Time</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in recent_records %}
+                <tr>
+                    <td class="fw-semibold">#{{ record.ticket_number }}</td>
+                    <td>{{ record.vehicle_number }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ record.zone.name }}</span></td>
+                    <td>{{ record.entry_time|date:"h:i A" }}</td>
+                    <td>{{ record.duration_hours }} hr</td>
+                    <td>
+                        {% if record.status == 'ACTIVE' %}
+                            <span class="badge bg-primary rounded-pill px-3">Parked</span>
+                        {% else %}
+                            <span class="badge bg-secondary rounded-pill px-3">Exited</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-light rounded-pill border">Manage</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted fw-medium py-4">No Parking Records Exist in Database</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Dashboard Chart
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: [1500, 3200, 5400, 4800, 6100, 8900, 7200, 4100],
+                borderColor: '#0066CC',
+                backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { display: false } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+{% endblock %}

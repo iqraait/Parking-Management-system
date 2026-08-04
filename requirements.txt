@@ -1,0 +1,12 @@
+Django>=5.0,<6.0
+djangorestframework
+djangorestframework-simplejwt
+psycopg2-binary
+drf-spectacular
+django-filter
+celery
+redis
+whitenoise
+gunicorn
+django-htmx
+django-cors-headers

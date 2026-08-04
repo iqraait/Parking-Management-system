@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - ParkOS{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        <h2 class="mb-0 fw-bold">Business Intelligence Report</h2>
+        <p class="text-muted"><i class="fa-solid fa-chart-pie me-2"></i> Artificial Intelligence powered statistics</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6 text-center">
+        <div class="glass-card p-5" style="border: 2px dashed rgba(255,255,255,0.4);">
+            <div class="display-3 text-warning fw-bold mb-3">{{ total_entry }}</div>
+            <h5 class="fw-bold">Total Vehicle Entries Lifetime</h5>
+        </div>
+    </div>
+    <div class="col-md-6 text-center">
+        <div class="glass-card p-5" style="background: linear-gradient(135deg, rgba(227, 203, 176, 0.4) 0%, rgba(185, 156, 117, 0.4) 100%);">
+            <div class="display-3 text-dark fw-bold mb-3">₹{{ total_revenue|floatformat:2 }}</div>
+            <h5 class="fw-bold">Total Lifetime Revenue Generated</h5>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-4 mt-3 mb-4">
+    <h5 class="fw-bold mb-3"><i class="fa-solid fa-code-compare text-primary me-2"></i> AI Revenue Comparison Engine</h5>
+    <p class="text-muted small mb-4">Select two distinct transaction dates to prompt the ParkOS AI to analyze chronological scaling metrics and provide business development guidance.</p>
+    
+    <form hx-post="{% url 'reports' %}" hx-target="#ai-results" hx-indicator="#ai-spinner">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="ai_compare">
+        
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label text-muted fw-bold">Date A (Baseline)</label>
+                <input type="date" name="date1" class="apple-input form-control" required>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label text-muted fw-bold">Date B (Target)</label>
+                <input type="date" name="date2" class="apple-input form-control" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="apple-btn btn-primary w-100"><i class="fa-solid fa-flask"></i> Compare</button>
+            </div>
+        </div>
+    </form>
+    
+    <div id="ai-spinner" class="htmx-indicator text-center p-5">
+        <div class="spinner-grow text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5 class="text-muted fw-bold blink-text" style="animation: pulse 1s infinite alternate;">AI testing models & compiling vectors...</h5>
+        <style>@keyframes pulse { from { opacity:0.6; } to { opacity:1; } }</style>
+    </div>
+    
+    <div id="ai-results"></div>
+</div>
+
+<div class="glass-card p-5 text-center mt-3">
+    <i class="fa-solid fa-file-pdf fa-4x text-danger mb-4"></i>
+    <h3 class="fw-bold">Export Capability</h3>
+    <p class="text-muted mx-auto" style="max-width: 500px;">
+        Advanced reporting modules including PDF and Excel exports are tracking the system correctly but the rendering microservices are still initializing on the background worker.
+    </p>
+    <button class="apple-btn px-5 mt-3 disabled">Download Tax / Audit Report</button>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - ParkOS{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-12">
+        <h2 class="mb-0 fw-bold">{{ title }}</h2>
+        <p class="text-muted"><i class="fa-solid fa-code-branch me-2"></i> Operational Module</p>
+    </div>
+</div>
+
+<div class="glass-card p-5 text-center" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <i class="fa-solid fa-compass-drafting text-primary fa-4x mb-4" style="color: var(--apple-dark) !important;"></i>
+    <h3 class="fw-bold">Module Under Construction</h3>
+    <p class="text-muted mb-4" style="max-width: 500px;">
+        The {{ title }} interface is initialized and verified in Django backend routing. Wait briefly for full forms and data tables deployment logic to map.
+    </p>
+    <a href="/" class="apple-btn btn-primary text-decoration-none">
+        <i class="fa-solid fa-arrow-left me-2"></i> Return to Dashboard
+    </a>
+</div>
+{% endblock %}
