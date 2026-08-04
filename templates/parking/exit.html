@@ -98,10 +98,11 @@
     </div>
     
     <div class="table-responsive">
-        <table class="apple-table data-table">
+        <table id="exitTable" class="apple-table data-table">
             <thead>
                 <tr>
                     <th>Ticket No</th>
+                    <th>Photo</th>
                     <th>Vehicle No</th>
                     <th>Zone</th>
                     <th>Duration</th>
@@ -113,6 +114,15 @@
                 {% for exit in recent_exits %}
                 <tr>
                     <td class="fw-semibold">#{{ exit.ticket_number }}</td>
+                    <td>
+                        {% if exit.entry_photo %}
+                        <a href="javascript:void(0)" onclick="openLightbox('{{ exit.entry_photo.url }}')">
+                            <img src="{{ exit.entry_photo.url }}" alt="Vehicle" class="img-thumbnail" style="height: 40px; width: 60px; object-fit: cover;">
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">No Image</span>
+                        {% endif %}
+                    </td>
                     <td>{{ exit.vehicle_number }}</td>
                     <td><span class="badge bg-light text-dark border">{{ exit.zone.name }}</span></td>
                     <td>{{ exit.duration_hours }} hr</td>
@@ -120,7 +130,7 @@
                     <td>{{ exit.exit_time|date:"h:i A" }}</td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center text-muted">No vehicles have exited recently.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted">No vehicles have exited recently.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

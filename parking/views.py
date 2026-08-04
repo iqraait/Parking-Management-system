@@ -65,6 +65,21 @@ def entry_view(request):
         zone_id = request.POST.get('zone_id')
         mobile = request.POST.get('mobile', '')
         notes = request.POST.get('notes', '')
+        entry_photo = request.FILES.get('entry_photo')
+        entry_photo_base64 = request.POST.get('entry_photo_base64')
+
+        import base64
+        import uuid
+        from django.core.files.base import ContentFile
+
+        final_photo = entry_photo
+        if not final_photo and entry_photo_base64:
+            try:
+                format, imgstr = entry_photo_base64.split(';base64,') 
+                ext = format.split('/')[-1]
+                final_photo = ContentFile(base64.b64decode(imgstr), name=f"capture_{uuid.uuid4().hex[:8]}.{ext}")
+            except Exception as e:
+                pass
 
         try:
             zone = ParkingZone.objects.get(id=zone_id)
@@ -75,6 +90,7 @@ def entry_view(request):
                     vehicle_type=v_type,
                     mobile=mobile,
                     notes=notes,
+                    entry_photo=final_photo,
                     entry_staff=request.user
                 )
                 messages.success(request, f"Ticket {record.ticket_number} generated successfully!")
@@ -144,7 +160,6 @@ def exit_view(request):
 
     # Date Filtering
     date_filter = request.GET.get('date')
-    from django.utils import timezone
     today = timezone.localtime().date()
     
     recent_exits = VehicleRecord.objects.filter(status='EXITED')
@@ -210,13 +225,22 @@ def zones_view(request):
         base_hours = request.POST.get('base_hours', 1) if request.POST.get('base_hours') else 1
         extra_step = request.POST.get('extra_step', 1) if request.POST.get('extra_step') else 1
         
-        ParkingZone.objects.create(
-            name=name, code=code, capacity=capacity, 
-            is_free=is_free,
-            base_hourly_price=base_price, additional_hour_price=extra_price,
-            additional_hour_after=base_hours, extra_hours_step=extra_step
-        )
-        messages.success(request, f"Parking Zone '{name}' created successfully!")
+        try:
+            ParkingZone.objects.create(
+                name=name, code=code, capacity=capacity, 
+                is_free=is_free,
+                base_hourly_price=base_price, additional_hour_price=extra_price,
+                additional_hour_after=base_hours, extra_hours_step=extra_step
+            )
+            messages.success(request, f"Parking Zone '{name}' created successfully!")
+        except Exception as e:
+            if 'UNIQUE constraint failed' in str(e):
+                messages.error(request, f"Error: A zone with the code '{code}' already exists.")
+            else:
+                messages.error(request, f"Error creating zone: {str(e)}")
+                
+        from django.shortcuts import redirect
+        return redirect('zones')
         
     zones = ParkingZone.objects.all().order_by('-id')
     return render(request, 'parking/zones.html', {'title': 'Parking Zones', 'zones': zones})
@@ -341,3 +365,43 @@ def settings_view(request):
                 
     users = User.objects.all().order_by('-date_joined')
     return render(request, 'parking/settings.html', {'title': 'System Settings', 'users': users})
+
+import math
+
+def public_display_view(request):
+    zones = list(ParkingZone.objects.filter(is_active=True).order_by('name'))
+    
+    per_page = 4
+    total_zones = len(zones)
+    total_pages = math.ceil(total_zones / per_page) if total_zones > 0 else 1
+        
+    try:
+        current_page = int(request.GET.get('page', 1))
+    except ValueError:
+        current_page = 1
+        
+    if current_page > total_pages or current_page < 1:
+        current_page = 1
+        
+    next_page = current_page + 1 if current_page < total_pages else 1
+
+    start_idx = (current_page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_zones = zones[start_idx:end_idx]
+
+    display_zones = []
+    for zone in paginated_zones:
+        display_zones.append({
+            'name': zone.name,
+            'code': zone.code,
+            'available': zone.available_slots(),
+        })
+    
+    context = {
+        'title': 'Public Display Screen',
+        'zones': display_zones,
+        'current_page': current_page,
+        'total_pages': total_pages,
+        'next_page': next_page,
+    }
+    return render(request, 'parking/public_display.html', context)

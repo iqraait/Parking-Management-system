@@ -39,7 +39,7 @@ class VehicleRecord(models.Model):
     driver_name = models.CharField(max_length=100, blank=True)
     mobile = models.CharField(max_length=15, blank=True)
     notes = models.TextField(blank=True)
-    # entry_photo = models.ImageField(upload_to='entry_photos/', blank=True, null=True)
+    entry_photo = models.ImageField(upload_to='entry_photos/', blank=True, null=True)
 
     entry_time = models.DateTimeField(default=timezone.now)
     entry_staff = models.ForeignKey(User, related_name='entries_managed', on_delete=models.SET_NULL, null=True)

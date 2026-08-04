@@ -125,6 +125,7 @@
             <thead>
                 <tr>
                     <th>Ticket No</th>
+                    <th>Photo</th>
                     <th>Vehicle No</th>
                     <th>Zone</th>
                     <th>Entry Time</th>
@@ -137,6 +138,15 @@
                 {% for record in recent_records %}
                 <tr>
                     <td class="fw-semibold">#{{ record.ticket_number }}</td>
+                    <td>
+                        {% if record.entry_photo %}
+                        <a href="javascript:void(0)" onclick="openLightbox('{{ record.entry_photo.url }}')">
+                            <img src="{{ record.entry_photo.url }}" alt="Vehicle" class="img-thumbnail" style="height: 40px; width: 60px; object-fit: cover;">
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">No Image</span>
+                        {% endif %}
+                    </td>
                     <td>{{ record.vehicle_number }}</td>
                     <td><span class="badge bg-light text-dark border">{{ record.zone.name }}</span></td>
                     <td>{{ record.entry_time|date:"h:i A" }}</td>
@@ -154,7 +164,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted fw-medium py-4">No Parking Records Exist in Database</td>
+                    <td colspan="8" class="text-center text-muted fw-medium py-4">No Parking Records Exist in Database</td>
                 </tr>
                 {% endfor %}
             </tbody>

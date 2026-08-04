@@ -23,10 +23,11 @@
     </div>
     
     <div class="table-responsive">
-        <table class="apple-table data-table">
+        <table id="logsTable" class="apple-table data-table">
             <thead>
                 <tr>
                     <th>Ticket No</th>
+                    <th>Photo</th>
                     <th>Vehicle Plate</th>
                     <th>Zone</th>
                     <th>Status</th>
@@ -38,6 +39,15 @@
                 {% for v in vehicles %}
                 <tr>
                     <td class="fw-semibold">#{{ v.ticket_number }}</td>
+                    <td>
+                        {% if v.entry_photo %}
+                        <a href="javascript:void(0)" onclick="openLightbox('{{ v.entry_photo.url }}')">
+                            <img src="{{ v.entry_photo.url }}" alt="Vehicle" class="img-thumbnail" style="height: 40px; width: 60px; object-fit: cover;">
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">N/A</span>
+                        {% endif %}
+                    </td>
                     <td class="fw-bold">{{ v.vehicle_number }}</td>
                     <td><span class="badge bg-light text-dark border">{{ v.zone.name }}</span></td>
                     <td>
@@ -55,7 +65,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center text-muted">No vehicle records found for this criteria.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted">No vehicle records found for this criteria.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -116,7 +126,14 @@
               </div>
           </div>
           
-          <div class="bg-light p-3 rounded-3 mt-2" style="border: 1px solid #ddd;">
+          {% if v.entry_photo %}
+          <div class="bg-light p-3 rounded-3 mt-3 text-center" style="border: 1px solid #ddd;">
+              <h6 class="fw-bold fs-6 mb-3 text-secondary text-start">Captured Vehicle Photo</h6>
+              <img src="{{ v.entry_photo.url }}" alt="Vehicle Entry Photo" class="img-fluid rounded" style="max-height: 250px; object-fit: contain;">
+          </div>
+          {% endif %}
+          
+          <div class="bg-light p-3 rounded-3 mt-3" style="border: 1px solid #ddd;">
               <h6 class="fw-bold fs-6 mb-3 text-secondary">Personnel Audit</h6>
               <div class="row">
                   <div class="col-6">

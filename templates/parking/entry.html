@@ -24,7 +24,7 @@
                 {% endfor %}
             {% endif %}
 
-            <form method="post" action="{% url 'entry' %}">
+            <form method="post" action="{% url 'entry' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 <div class="row">
@@ -60,9 +60,16 @@
                     </div>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="form-label fw-semibold text-muted">Additional Notes</label>
-                    <textarea name="notes" class="apple-input form-control" rows="3" placeholder="Scratches on left bumper, VIP guest, etc."></textarea>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label fw-semibold text-muted">Additional Notes</label>
+                        <textarea name="notes" class="apple-input form-control" rows="2" placeholder="Scratches on left bumper, VIP, etc."></textarea>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label fw-semibold text-muted">Vehicle Photo (Optional)</label>
+                        <input type="file" name="entry_photo" class="apple-input form-control" accept="image/*" capture="environment">
+                        <input type="hidden" name="entry_photo_base64" id="entry_photo_base64">
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-end gap-3 mt-4">
@@ -79,14 +86,19 @@
         <!-- Live Camera Feed Preview -->
         <div class="glass-card p-4 text-center mb-4" style="background: rgba(0,0,0,0.85); color: white; border: none;">
             <div class="mb-2 text-start text-muted fw-bold tracking-wider" style="font-size: 11px; text-transform: uppercase;">Live ANPR Camera Feed</div>
-            <div id="videoContainer" style="height: 200px; display: flex; align-items: center; justify-content: center; border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; margin-bottom: 15px; overflow: hidden;">
+            <div id="videoContainer" style="height: 200px; position: relative; display: flex; align-items: center; justify-content: center; border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; margin-bottom: 15px; overflow: hidden;">
                 <video id="cameraElement" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+                <img id="cameraPreview" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
                 <div id="cameraStatus" class="text-muted">
                     <i class="fa-solid fa-video-slash fa-2x mb-2 text-danger"></i><br>
                     <span>Camera Offline</span>
                 </div>
             </div>
-            <button type="button" id="startCameraBtn" class="btn btn-sm btn-outline-light rounded-pill px-4">Open Local Camera</button>
+            <div class="d-flex justify-content-center gap-2">
+                <button type="button" id="startCameraBtn" class="btn btn-sm btn-outline-light rounded-pill px-4"><i class="fa-solid fa-camera me-1"></i> Open Camera</button>
+                <button type="button" id="captureBtn" class="btn btn-sm btn-success rounded-pill px-4" style="display: none;"><i class="fa-solid fa-camera-retro me-1"></i> Capture Photo</button>
+            </div>
+            <canvas id="cameraCanvas" style="display: none;"></canvas>
         </div>
 
         <div class="glass-card p-4 mb-4">
@@ -120,10 +132,11 @@
     </div>
     
     <div class="table-responsive">
-        <table class="apple-table data-table">
+        <table id="entryTable" class="apple-table data-table">
             <thead>
                 <tr>
                     <th>Ticket No</th>
+                    <th>Photo</th>
                     <th>Vehicle No</th>
                     <th>Type</th>
                     <th>Zone</th>
@@ -136,6 +149,15 @@
                 {% for entry in recent_entries %}
                 <tr>
                     <td class="fw-semibold">#{{ entry.ticket_number }}</td>
+                    <td>
+                        {% if entry.entry_photo %}
+                        <a href="javascript:void(0)" onclick="openLightbox('{{ entry.entry_photo.url }}')">
+                            <img src="{{ entry.entry_photo.url }}" alt="Vehicle" class="img-thumbnail" style="height: 40px; width: 60px; object-fit: cover;">
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">No Image</span>
+                        {% endif %}
+                    </td>
                     <td>{{ entry.vehicle_number }}</td>
                     <td>{{ entry.vehicle_type }}</td>
                     <td><span class="badge bg-light text-dark border">{{ entry.zone.name }}</span></td>
@@ -151,7 +173,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center text-muted">No vehicles have entered recently.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted">No vehicles have entered recently.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -249,19 +271,64 @@
 
 {% block scripts %}
 <script>
-    document.getElementById('startCameraBtn').addEventListener('click', async function() {
-        const video = document.getElementById('cameraElement');
-        const status = document.getElementById('cameraStatus');
+(function() {
+    const video = document.getElementById('cameraElement');
+    const preview = document.getElementById('cameraPreview');
+    const status = document.getElementById('cameraStatus');
+    const captureBtn = document.getElementById('captureBtn');
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const canvas = document.getElementById('cameraCanvas');
+    let videoStream = null;
+
+    startCameraBtn.addEventListener('click', async function() {
+        if (videoStream) {
+            preview.style.display = 'none';
+            video.style.display = 'block';
+            captureBtn.style.display = 'block';
+            return;
+        }
         
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            video.srcObject = stream;
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
+            } catch(e) {
+                // Fallback to front camera or whichever is available if no rear camera exists
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            }
+            video.srcObject = videoStream;
             video.style.display = 'block';
             status.style.display = 'none';
+            preview.style.display = 'none';
+            captureBtn.style.display = 'block';
         } catch (err) {
             console.error("Camera error:", err);
-            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation fa-2x mb-2 text-warning"></i><br><span>Camera Access Denied/Unavailable</span>';
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation fa-2x mb-2 text-warning"></i><br><span>Camera Access Denied</span>';
         }
     });
+
+    captureBtn.addEventListener('click', function() {
+        if (!videoStream) return;
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        preview.src = dataUrl;
+        preview.style.display = 'block';
+        video.style.display = 'none';
+        captureBtn.style.display = 'none'; 
+
+        // Set hidden input with robust base64 for django processing
+        document.getElementById('entry_photo_base64').value = dataUrl;
+        
+        // Visual indicator that photo was taken
+        const fileInput = document.querySelector("input[name='entry_photo']");
+        fileInput.style.border = '2px solid #10b981';
+        setTimeout(() => { fileInput.style.border = ''; }, 2000);
+    });
+})();
 </script>
 {% endblock %}
