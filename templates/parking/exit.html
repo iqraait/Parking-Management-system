@@ -129,8 +129,6 @@
                     <td class="text-success fw-bold">₹{{ exit.total_charges }}</td>
                     <td>{{ exit.exit_time|date:"h:i A" }}</td>
                 </tr>
-                {% empty %}
-                <tr><td colspan="7" class="text-center text-muted">No vehicles have exited recently.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

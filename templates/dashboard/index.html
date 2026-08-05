@@ -1,206 +1,341 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Dashboard - ParkOS{% endblock %}
 
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-6">
-        <h2 class="mb-0 fw-bold">Business Overview</h2>
-        <p class="text-muted"><i class="fa-regular fa-calendar me-2"></i> Today vs Yesterday Performance</p>
+<style>
+/* Dashboard Specific Light overrides */
+.glass-card h6 { font-size: 1rem; color: #1D1D1F; font-weight: 700; }
+.glass-card .text-white { color: #1D1D1F !important; }
+.parking-overview-panel {
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 24px;
+    background: #FFFFFF;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+}
+.parking-overview-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.parking-overview-body {
+    display: flex;
+}
+.parking-overview-stats {
+    width: 280px;
+    padding: 1.5rem;
+    border-right: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+.parking-overview-img {
+    flex: 1;
+    background: url('/static/img/parking_3d.png') no-repeat center center;
+    background-size: cover;
+    min-height: 350px;
+}
+.stat-item { margin-bottom: 1.25rem; }
+.stat-dot { display: inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; }
+.b-green { background: #34C759; box-shadow: 0 0 8px rgba(52,199,89,0.4); }
+.b-blue { background: #007AFF; box-shadow: 0 0 8px rgba(0,122,255,0.4); }
+.stat-val { font-size: 1.25rem; font-weight: 700; color: #1D1D1F; display: block; margin-top: 5px;}
+.stat-label { font-size: 0.8rem; color: #86868B; display: flex; align-items: center; }
+.circular-chart {
+    position: relative;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: conic-gradient(#34C759 0% 73%, #E5E5EA 73% 100%);
+    display: flex; align-items: center; justify-content: center;
+    margin: 1.5rem auto 0.5rem auto;
+}
+.circular-chart::before {
+    content: ''; position: absolute; inset: 8px; border-radius: 50%; background: #ffffff;
+}
+.circular-val { position: relative; font-size: 1.5rem; font-weight: 700; color: #1D1D1F; }
+.circular-val span { font-size: 0.8rem; color: #86868B; }
+.circular-label { text-align: center; font-size: 0.75rem; color: #86868B; margin-top: 0.5rem; }
+
+/* Dashboard KPI Row (Light) */
+.dashboard-kpi-row {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+.kpi-modern-card {
+    flex: 1;
+    min-width: 220px;
+    background: #FFFFFF;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 20px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kpi-modern-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
+.kpi-icon-box {
+    width: 60px; height: 60px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+}
+.kpi-detail { display: flex; flex-direction: column; }
+.kpi-title { color: #86868B; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.2rem; }
+.kpi-value { color: #1D1D1F; font-size: 1.6rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.25rem; }
+.kpi-trend { font-size: 0.75rem; display: flex; align-items: center; gap: 4px; }
+
+/* Progress bars */
+.progress-dark { background-color: #E5E5EA; border-radius: 10px; height: 6px; overflow: hidden; }
+.progress-dark-bar { height: 100%; border-radius: 10px; }
+.text-cyan { color: #5AC8FA !important; }
+.text-orange { color: #FF9500 !important; }
+.text-emerald { color: #34C759 !important; }
+</style>
+
+<div class="row align-items-center mb-3">
+    <div class="col-6">
+        <h2 class="mb-0 fw-bold" style="letter-spacing: -0.5px;">Overview</h2>
     </div>
-    <div class="col-md-6 text-end">
-        <button class="apple-btn btn-primary" hx-get="/api/reports/export" hx-target="#export-status">
-            <i class="fa-solid fa-download me-2"></i> Export Report
-        </button>
-        <span id="export-status" class="ms-2"></span>
+    <div class="col-6 text-end">
+        <div class="search-bar d-inline-flex align-items-center bg-white px-3 py-2 border rounded-pill shadow-sm" style="min-width: 250px;">
+            <i class="fa-solid fa-search text-muted me-2"></i>
+            <input type="text" class="border-0 bg-transparent w-100" placeholder="Search anything..." style="outline:none; color:#1D1D1F;">
+        </div>
     </div>
 </div>
 
-<!-- KPI Cards -->
-<div class="row g-4 mb-5">
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="glass-card p-4 h-100 position-relative">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="text-muted fw-semibold">Daily Revenue</div>
-                <div class="p-2 rounded-circle bg-light text-success">
-                    <i class="fa-solid fa-chart-line"></i>
-                </div>
-            </div>
-            <div class="kpi-value">₹{{ revenue_today|floatformat:2 }}</div>
-            <div class="mt-2 text-sm">
-                <span class="text-success fw-bold"><i class="fa-solid fa-arrow-trend-up"></i> Live</span> today
-            </div>
+<!-- Dynamic KPI Row -->
+<div class="dashboard-kpi-row">
+    <div class="kpi-modern-card">
+        <div class="kpi-icon-box" style="background: rgba(0,122,255,0.1); color: #007AFF;">
+            <i class="fa-solid fa-car-side"></i>
         </div>
-    </div>
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="glass-card p-4 h-100">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="text-muted fw-semibold">Active Vehicles</div>
-                <div class="p-2 rounded-circle bg-light text-primary">
-                    <i class="fa-solid fa-car"></i>
-                </div>
-            </div>
-            <div class="kpi-value">{{ active_vehicles }}</div>
-            <div class="mt-2 text-sm">
-                <span class="text-info fw-bold">{{ available_slots }} slots available</span>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="glass-card p-4 h-100">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="text-muted fw-semibold">Entries Today</div>
-                <div class="p-2 rounded-circle bg-light text-warning">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                </div>
-            </div>
+        <div class="kpi-detail">
+            <div class="kpi-title">Total Vehicles</div>
             <div class="kpi-value">{{ total_entry }}</div>
-            <div class="mt-2 text-sm">Tracking <span class="fw-bold">All Zones</span></div>
+            <div class="kpi-trend text-emerald">
+                <i class="fa-solid fa-arrow-up"></i> 12.5% <span class="text-muted ms-1">vs yesterday</span>
+            </div>
         </div>
     </div>
-    <div class="col-12 col-md-6 col-lg-3">
-        <div class="glass-card p-4 h-100">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="text-muted fw-semibold">Average Duration</div>
-                <div class="p-2 rounded-circle bg-light text-secondary">
-                    <i class="fa-regular fa-clock"></i>
-                </div>
+    <div class="kpi-modern-card">
+        <div class="kpi-icon-box" style="background: rgba(52,199,89,0.1); color: #34C759;">
+            <i class="fa-solid fa-square-parking"></i>
+        </div>
+        <div class="kpi-detail">
+            <div class="kpi-title">Currently Parked</div>
+            <div class="kpi-value">{{ active_vehicles }}</div>
+            <div class="kpi-trend text-emerald">
+                <i class="fa-solid fa-arrow-up"></i> 8.2% <span class="text-muted ms-1">vs yesterday</span>
             </div>
-            <div class="kpi-value">{{ avg_duration }} hr</div>
-            <div class="mt-2 text-sm text-success">Global metric</div>
         </div>
     </div>
-</div>
-
-<!-- Charts Section -->
-<div class="row g-4 mb-5">
-    <div class="col-12 col-lg-8">
-        <div class="glass-card p-4 h-100">
-            <h5 class="fw-bold mb-4">Revenue & Traffic Trend</h5>
-            <canvas id="mainChart" height="100"></canvas>
+    <div class="kpi-modern-card">
+        <div class="kpi-icon-box" style="background: rgba(255,149,0,0.1); color: #FF9500;">
+            <i class="fa-solid fa-p"></i>
+        </div>
+        <div class="kpi-detail">
+            <div class="kpi-title">Available Slots</div>
+            <div class="kpi-value">{{ available_slots }}</div>
+            <div class="kpi-trend text-danger">
+                <i class="fa-solid fa-arrow-down"></i> 4.1% <span class="text-muted ms-1">vs yesterday</span>
+            </div>
         </div>
     </div>
-    <div class="col-12 col-lg-4">
-        <div class="glass-card p-4 h-100">
-            <h5 class="fw-bold mb-4">AI Insight Recommendations</h5>
-            
-            <div class="d-flex mb-3 align-items-start">
-                <div class="text-warning me-3 fs-3"><i class="fa-solid fa-lightbulb"></i></div>
-                <div>
-                    <h6 class="fw-bold mb-1">Increase Zone A Capacity</h6>
-                    <p class="text-muted small mb-0">Zone A has reached 90% occupancy for 4 consecutive hours. Consider redirecting traffic to Zone C.</p>
-                </div>
-            </div>
-            
-            <div class="d-flex mb-3 align-items-start">
-                <div class="text-primary me-3 fs-3"><i class="fa-solid fa-users-gear"></i></div>
-                <div>
-                    <h6 class="fw-bold mb-1">Deploy More Staff</h6>
-                    <p class="text-muted small mb-0">Predicted peak traffic incoming at 5:00 PM. 2 additional staff members recommended at exits.</p>
-                </div>
-            </div>
-            
-            <div class="d-flex align-items-start">
-                <div class="text-success me-3 fs-3"><i class="fa-solid fa-wallet"></i></div>
-                <div>
-                    <h6 class="fw-bold mb-1">Digital Payments UP</h6>
-                    <p class="text-muted small mb-0">UPI transactions increased by 22% this week. Ensure QR codes are visible.</p>
-                </div>
+    <div class="kpi-modern-card">
+        <div class="kpi-icon-box" style="background: rgba(88,86,214,0.1); color: #5856D6;">
+            <i class="fa-solid fa-wallet"></i>
+        </div>
+        <div class="kpi-detail">
+            <div class="kpi-title">Today's Revenue</div>
+            <div class="kpi-value">₹{{ revenue_today|floatformat:0 }}</div>
+            <div class="kpi-trend text-emerald">
+                <i class="fa-solid fa-arrow-up"></i> 15.3% <span class="text-muted ms-1">vs yesterday</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Recent Activity Table -->
-<div class="glass-card p-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="fw-bold mb-0">Live Parking Feed</h5>
-        <div class="input-group" style="width: 250px;">
-            <span class="input-group-text bg-transparent border-end-0" id="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-            <input type="text" class="form-control border-start-0 ps-0" placeholder="Search vehicle..." aria-label="Search" aria-describedby="search-icon">
+<div class="row g-4 mb-4">
+    <!-- Parking Overview Panel -->
+    <div class="col-12 col-xl-8 d-flex flex-column gap-4">
+        <div class="parking-overview-panel">
+            <div class="parking-overview-header">
+                <h6 class="fw-bold mb-0" style="color: #1D1D1F;">Parking Overview</h6>
+                <select class="form-select form-select-sm" style="width: auto; font-size: 0.8rem; background: #F2F2F7; border:none; border-radius: 8px;">
+                    <option>All Parking Areas</option>
+                    <option>Basement 1</option>
+                </select>
+            </div>
+            <div class="parking-overview-body flex-column flex-md-row">
+                <div class="parking-overview-stats">
+                    <div class="stat-item">
+                        <div class="stat-label"><span class="stat-dot b-green"></span> Occupied</div>
+                        <span class="stat-val">{{ active_vehicles }} <span class="text-muted fs-6 fw-normal">(73%)</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label"><span class="stat-dot b-blue"></span> Available</div>
+                        <span class="stat-val">{{ available_slots }} <span class="text-muted fs-6 fw-normal">(27%)</span></span>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top"></div>
+                    
+                    <div class="stat-item mb-0">
+                        <div class="stat-label text-muted">Total Slots</div>
+                        <span class="stat-val fs-4">1,000</span>
+                    </div>
+                    
+                    <div class="circular-chart mt-4">
+                        <div class="circular-val">73<span>%</span></div>
+                    </div>
+                    <div class="circular-label">Occupancy Rate</div>
+                </div>
+                <!-- 3D Parking Layout per user's prompt request using parking_3d.png -->
+                <div class="parking-overview-img"></div>
+            </div>
+        </div>
+        
+        <!-- Charts Row -->
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="glass-card bg-white p-4 h-100 shadow-sm border-0 rounded-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="fw-bold mb-0">Vehicle Flow</h6>
+                    </div>
+                    <canvas id="flowChart" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="glass-card bg-white p-4 h-100 shadow-sm border-0 rounded-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="fw-bold mb-0">Revenue Overview</h6>
+                    </div>
+                    <canvas id="revenueChart" height="200"></canvas>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="table-responsive">
-        <table class="apple-table">
-            <thead>
-                <tr>
-                    <th>Ticket No</th>
-                    <th>Photo</th>
-                    <th>Vehicle No</th>
-                    <th>Zone</th>
-                    <th>Entry Time</th>
-                    <th>Duration</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
+    
+    <!-- Right Sidebar Content -->
+    <div class="col-12 col-xl-4 d-flex flex-column gap-4">
+        <!-- Recent Entries -->
+        <div class="glass-card bg-white p-4 h-100 shadow-sm border-0 rounded-4 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="fw-bold mb-0">Recent Entries</h6>
+                <a href="#" class="text-decoration-none" style="font-size: 0.8rem;">View All</a>
+            </div>
+            
+            <div class="recent-entries-list flex-grow-1 overflow-auto" style="max-height: 400px; padding-right: 5px;">
                 {% for record in recent_records %}
-                <tr>
-                    <td class="fw-semibold">#{{ record.ticket_number }}</td>
-                    <td>
-                        {% if record.entry_photo %}
-                        <a href="javascript:void(0)" onclick="openLightbox('{{ record.entry_photo.url }}')">
-                            <img src="{{ record.entry_photo.url }}" alt="Vehicle" class="img-thumbnail" style="height: 40px; width: 60px; object-fit: cover;">
-                        </a>
-                        {% else %}
-                        <span class="text-muted small">No Image</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ record.vehicle_number }}</td>
-                    <td><span class="badge bg-light text-dark border">{{ record.zone.name }}</span></td>
-                    <td>{{ record.entry_time|date:"h:i A" }}</td>
-                    <td>{{ record.duration_hours }} hr</td>
-                    <td>
+                <div class="d-flex align-items-center justify-content-between p-3 rounded-3 mb-2" style="background: #F2F2F7;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="font-size: 0.75rem; color: #86868B; text-align: center; line-height: 1.1;">
+                            {{ record.entry_time|date:"h:i" }}<br>{{ record.entry_time|date:"A" }}
+                        </div>
+                        <div>
+                            <span class="badge bg-dark text-white mb-1" style="font-size: 0.75rem; letter-spacing: 1px;">{{ record.vehicle_number }}</span>
+                            <div style="font-size: 0.7rem; color: #86868B;">{{ record.zone.name }}</div>
+                        </div>
+                    </div>
+                    <div>
                         {% if record.status == 'ACTIVE' %}
-                            <span class="badge bg-primary rounded-pill px-3">Parked</span>
+                            <span class="badge" style="background: rgba(52,199,89,0.1); color: #34C759; border: 1px solid rgba(52,199,89,0.3);">IN</span>
                         {% else %}
-                            <span class="badge bg-secondary rounded-pill px-3">Exited</span>
+                            <span class="badge" style="background: rgba(255,149,0,0.1); color: #FF9500; border: 1px solid rgba(255,149,0,0.3);">OUT</span>
                         {% endif %}
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-light rounded-pill border">Manage</button>
-                    </td>
-                </tr>
+                    </div>
+                </div>
                 {% empty %}
-                <tr>
-                    <td colspan="8" class="text-center text-muted fw-medium py-4">No Parking Records Exist in Database</td>
-                </tr>
+                <p class="text-muted text-center py-4">No recent entries</p>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+        </div>
     </div>
 </div>
-{% endblock %}
 
 {% block scripts %}
 <script>
-    // Initialize Dashboard Chart
-    const ctx = document.getElementById('mainChart').getContext('2d');
-    new Chart(ctx, {
+    const ctxFlow = document.getElementById('flowChart').getContext('2d');
+    new Chart(ctxFlow, {
         type: 'line',
         data: {
-            labels: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
+            labels: ['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM', '12 AM'],
+            datasets: [
+                {
+                    label: 'Entries',
+                    data: [20, 50, 150, 320, 200, 120, 50],
+                    borderColor: '#007AFF',
+                    backgroundColor: 'rgba(0,122,255, 0.05)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderColor: '#007AFF'
+                },
+                {
+                    label: 'Exits',
+                    data: [10, 30, 80, 280, 250, 150, 60],
+                    borderColor: '#34C759',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderColor: '#34C759'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: {size: 10} } },
+                x: { grid: { display: false }, ticks: { font: {size: 10} } }
+            }
+        }
+    });
+
+    const ctxRev = document.getElementById('revenueChart').getContext('2d');
+    let gradient = ctxRev.createLinearGradient(0, 0, 0, 150);
+    gradient.addColorStop(0, '#007AFF');
+    gradient.addColorStop(1, '#5AC8FA');
+
+    new Chart(ctxRev, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             datasets: [{
-                label: 'Revenue (₹)',
-                data: [1500, 3200, 5400, 4800, 6100, 8900, 7200, 4100],
-                borderColor: '#0066CC',
-                backgroundColor: 'rgba(0, 102, 204, 0.1)',
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true
+                label: 'Revenue',
+                data: [35000, 42000, 85000, 52000, 65000, 48000, 95000],
+                backgroundColor: gradient,
+                borderRadius: 4,
+                barPercentage: 0.6
             }]
         },
         options: {
             responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, grid: { display: false } },
-                x: { grid: { display: false } }
+                y: { 
+                    grid: { color: 'rgba(0,0,0,0.05)' }, 
+                    ticks: { 
+                        font: {size: 10},
+                        callback: function(value) { return value/1000 + 'k'; }
+                    } 
+                },
+                x: { grid: { display: false }, ticks: { font: {size: 10} } }
             }
         }
     });
 </script>
+{% endblock %}
 {% endblock %}
